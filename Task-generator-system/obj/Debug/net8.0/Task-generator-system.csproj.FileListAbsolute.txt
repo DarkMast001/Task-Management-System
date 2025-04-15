@@ -19,3 +19,4 @@ D:\Институт\3 курс 2 семестр\ОС\project\Task-generator-syst
 D:\Институт\3 курс 2 семестр\ОС\project\Task-generator-system\bin\Debug\net8.0\TasksDescriptorModule.pdb
 D:\Институт\3 курс 2 семестр\ОС\project\Task-generator-system\obj\Debug\net8.0\Task-generator-system.csproj.AssemblyReference.cache
 D:\Институт\3 курс 2 семестр\ОС\project\Task-generator-system\obj\Debug\net8.0\Task-gen.E79BE64D.Up2Date
+D:\Институт\3 курс 2 семестр\ОС\project\Task-generator-system\obj\Debug\net8.0\Task-generator-system.sourcelink.json

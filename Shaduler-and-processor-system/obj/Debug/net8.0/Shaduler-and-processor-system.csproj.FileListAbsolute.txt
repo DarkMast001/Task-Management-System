@@ -24,3 +24,4 @@ D:\Институт\3 курс 2 семестр\ОС\project\Shaduler-and-proces
 D:\Институт\3 курс 2 семестр\ОС\project\Shaduler-and-processor-system\bin\Debug\net8.0\TasksDescriptorModule.exe
 D:\Институт\3 курс 2 семестр\ОС\project\Shaduler-and-processor-system\bin\Debug\net8.0\TasksDescriptorModule.dll
 D:\Институт\3 курс 2 семестр\ОС\project\Shaduler-and-processor-system\bin\Debug\net8.0\TasksDescriptorModule.pdb
+D:\Институт\3 курс 2 семестр\ОС\project\Shaduler-and-processor-system\obj\Debug\net8.0\Shaduler-and-processor-system.sourcelink.json

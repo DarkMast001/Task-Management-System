@@ -12,3 +12,4 @@ D:\Институт\3 курс 2 семестр\ОС\project\TaskDescriptor\obj\
 D:\Институт\3 курс 2 семестр\ОС\project\TaskDescriptor\obj\Debug\net8.0\TasksDescriptorModule.pdb
 D:\Институт\3 курс 2 семестр\ОС\project\TaskDescriptor\obj\Debug\net8.0\TasksDescriptorModule.genruntimeconfig.cache
 D:\Институт\3 курс 2 семестр\ОС\project\TaskDescriptor\obj\Debug\net8.0\ref\TasksDescriptorModule.dll
+D:\Институт\3 курс 2 семестр\ОС\project\TaskDescriptor\obj\Debug\net8.0\TasksDescriptorModule.sourcelink.json

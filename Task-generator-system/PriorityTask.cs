@@ -10,8 +10,6 @@ namespace Task_generator_system
         private readonly Task _task;
         private readonly int _executionTime;
 
-        public Socket? Socket { get; set; }
-
         public PriorityTask(Action action, int priority, int executionTime)
         {
             _task = new Task(action);

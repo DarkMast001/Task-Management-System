@@ -224,9 +224,8 @@ namespace Task_generator_system
             tcpSocket.Close();
         }
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-
             string? command;
             TasksDescriptor? taskDescriptor = null;
 

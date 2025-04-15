@@ -35,7 +35,7 @@ namespace Shaduler_and_processor_system
         private int _waitingThreads = 0;
 
         // Сокет текущего подключенного пользователя
-        private static Socket? userSocket;
+        private static Socket? _userSocket;
 
         public Shaduler(uint countWorkers) 
         {
@@ -149,13 +149,14 @@ namespace Shaduler_and_processor_system
                         {
                             string str = $"Все задачи были выполнены за {(int)_stopWatch.ElapsedMilliseconds}";
                             Console.WriteLine(str);
-                            //userSocket?.Send(Encoding.UTF8.GetBytes(str));
-                            //userSocket?.Shutdown(SocketShutdown.Both);
-                            //userSocket?.Close();
+                            _userSocket?.Send(Encoding.UTF8.GetBytes(str));
+                            _userSocket?.Shutdown(SocketShutdown.Both);
+                            _userSocket?.Close();
                         }
                     }
 
                     _taskAvailable.Wait();
+                    await Task.Delay(10);
                     _taskAvailable.Reset();
 
                     Interlocked.Decrement(ref _waitingThreads);
@@ -175,7 +176,7 @@ namespace Shaduler_and_processor_system
 
         public static void AddUserSocket(Socket socket)
         {
-
+            _userSocket = socket;
         }
     }
 }

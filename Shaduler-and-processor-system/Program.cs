@@ -46,11 +46,7 @@ namespace Shaduler_and_processor_system
             Shaduler shaduler = new Shaduler(workerCount);
             #endregion
 
-            //Thread startProcessThread = new Thread(shaduler.StartProcessorWork);
-            //startProcessThread.Start();
-
-            shaduler.StartProcessorWork();
-            
+            shaduler.StartProcessorWork(); 
 
             #region TCP CONNECTION
             const string ip = "127.0.0.1";
@@ -62,8 +58,9 @@ namespace Shaduler_and_processor_system
 
             while (true)
             {
+                Console.WriteLine("Жду задачи: ");
                 Socket listener = tcpSocket.Accept();
-                //Shaduler.AddUserSocket(listener);
+                Shaduler.AddUserSocket(listener);
                 byte[] buffer = new byte[256];
                 int size = 0;
                 StringBuilder data = new StringBuilder();
@@ -82,21 +79,19 @@ namespace Shaduler_and_processor_system
                 }
                 else
                 {
-                    listener.Send(Encoding.UTF8.GetBytes("OK"));
+                    //listener.Send(Encoding.UTF8.GetBytes("OK"));
                     List<PriorityTask> priorityTasks = taskGenerator.GetTasks();
                     foreach (PriorityTask priorityTask in priorityTasks)
                     {
-                        priorityTask.Socket = listener;
                         shaduler.Enqueue(priorityTask);
                     }
                     priorityTasks.Clear();
-                    // Console.WriteLine(shaduler.ToString());
                 }
 
                 Console.WriteLine(data);
 
-                listener.Shutdown(SocketShutdown.Both);
-                listener.Close();
+                //listener.Shutdown(SocketShutdown.Both);
+                //listener.Close();
             }
             #endregion
         }
