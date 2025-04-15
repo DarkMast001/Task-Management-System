@@ -1,18 +1,14 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
 using Task_generator_system;
-using TasksDescriptorModule;
 
 namespace Shaduler_and_processor_system
 {
-    public delegate void CallBack();
-
-    public struct ExecutionTasksByThreadInf
+    public struct TasksMetric
     {
-        public int executionTime;
+        public Stopwatch stopwatch;
         public int countOfTasks;
         public int countOfInterruptedTasks;
     }

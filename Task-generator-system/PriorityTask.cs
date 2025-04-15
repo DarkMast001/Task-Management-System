@@ -1,8 +1,4 @@
-﻿using System.Net.Sockets;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-
-namespace Task_generator_system
+﻿namespace Task_generator_system
 {
     public class PriorityTask
     {

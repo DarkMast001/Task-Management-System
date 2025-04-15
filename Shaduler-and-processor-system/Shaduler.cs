@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using Task_generator_system;
 
 namespace Shaduler_and_processor_system
@@ -37,12 +33,15 @@ namespace Shaduler_and_processor_system
         // Сокет текущего подключенного пользователя
         private static Socket? _userSocket;
 
+        private Dictionary<Socket, TasksMetric> _taskMetrics;
+
         public Shaduler(uint countWorkers) 
         {
             _queues = new SortedList<int, ConcurrentQueue<PriorityTask>>();
             _countWorkers = countWorkers;
             _isProcessorWork = false;
             _stopWatch = new Stopwatch();
+            _taskMetrics = new Dictionary<Socket, TasksMetric>();
         }
 
         public void Enqueue(PriorityTask task)

@@ -13,118 +13,90 @@ namespace Task_generator_system
 {
     internal class Program
     {
-        public static TasksDescriptor makeTaskDescriptor()
+        public static bool InputFromConsole(
+            out uint value,
+            string msg,
+            uint defaultValue,
+            string errorMsg,
+            Func<uint, bool>? validationFunction = null)
         {
+            bool flag = false;
+            value = 0;
+
             string? inputString;
 
+            Console.Write(msg);
+            inputString = Console.ReadLine();
+            if (inputString == null || inputString == "")
+            {
+                value = defaultValue;
+                if (validationFunction != null && !validationFunction(value))
+                    flag = false;
+                else
+                    flag = true;
+            }
+            else
+            {
+                try
+                {
+                    value = Convert.ToUInt32(inputString);
+
+                    if (validationFunction != null && !validationFunction(value))
+                    {
+                        throw new OverflowException(errorMsg);
+                    }
+
+                    flag = true;
+                }
+                catch (OverflowException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    value = 0;
+                }
+                catch (FormatException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    value = 0;
+                }
+            }
+
+            return flag;
+        }
+
+        public static TasksDescriptor MakeTaskDescriptor()
+        {
             uint amountOfTasks = 0;
             uint interruptionChance = 0;
             uint minExecutionTimeInMilliseconds = 0;
             uint maxExecutionTimeInMilliseconds = 0;
 
-            while (amountOfTasks == 0)
-            {
-                Console.Write("Количество задач (5): ");
-                inputString = Console.ReadLine();
-                if (inputString == null || inputString == "")
-                    amountOfTasks = 5;
-                else
-                {
-                    try
-                    {
-                        amountOfTasks = Convert.ToUInt32(inputString);
-                    }
-                    catch (OverflowException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        amountOfTasks = 0;
-                    }
-                    catch (FormatException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        amountOfTasks = 0;
-                    }
-                }
-            }
+            // Количество задач
+            while (!InputFromConsole(out amountOfTasks, 
+                "Количество задач (5): ", 
+                5, 
+                "Должно быть > 0",
+                value => value > 0)) ;
 
-            while (interruptionChance == 0)
-            {
-                Console.Write("Вероятность прерывания задачи 0-100 (10): ");
-                inputString = Console.ReadLine();
-                if (inputString == null || inputString == "")
-                    interruptionChance = 10;
-                else
-                {
-                    try
-                    {
-                        interruptionChance = Convert.ToUInt32(inputString);
+            // Вероятность прерывания
+            while (!InputFromConsole(out interruptionChance,
+                "Вероятность прерывания задачи 0-100 (10): ",
+                10,
+                "Значение вероятности прерывания не может быть > 100",
+                value => value >= 0 && value <= 100)) ;
 
-                        if (interruptionChance > 100)
-                            throw new OverflowException("The value of interruption chance cannot be > 100");
-                    }
-                    catch (OverflowException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        interruptionChance = 0;
-                    }
-                    catch (FormatException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        interruptionChance = 0;
-                    }
-                }
-            }
+            // Минимальное время выполнения задачи
+            while (!InputFromConsole(out minExecutionTimeInMilliseconds,
+                "Минимальное время выполнения одной задачи в миллисекундах (1000): ",
+                1000,
+                "Должно быть > 0",
+                value => value > 0)) ;
 
-
-            while (minExecutionTimeInMilliseconds == 0)
-            {
-                Console.Write("Минимальное время выполнения одной задачи в миллисекундах (1000): ");
-                inputString = Console.ReadLine();
-                if (inputString == null || inputString == "")
-                    minExecutionTimeInMilliseconds = 1000;
-                else
-                {
-                    try
-                    {
-                        minExecutionTimeInMilliseconds = Convert.ToUInt32(inputString);
-                    }
-                    catch (OverflowException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        minExecutionTimeInMilliseconds = 0;
-                    }
-                    catch (FormatException ex)
-                    {
-                        Console.WriteLine (ex.Message);
-                        minExecutionTimeInMilliseconds = 0;
-                    }
-                }
-            }
-
-            while (maxExecutionTimeInMilliseconds < minExecutionTimeInMilliseconds)
-            {
-                Console.Write("Максимальное время выполнения одной задачи в миллисекундах (1000): ");
-                inputString = Console.ReadLine();
-                if (inputString == null || inputString == "")
-                    maxExecutionTimeInMilliseconds = 1000;
-                else
-                {
-                    try
-                    {
-                        maxExecutionTimeInMilliseconds = Convert.ToUInt32(inputString);
-                    }
-                    catch (OverflowException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        maxExecutionTimeInMilliseconds = 0;
-                    }
-                    catch (FormatException ex)
-                    {
-                        Console.WriteLine (ex.Message);
-                        maxExecutionTimeInMilliseconds = 0;
-                    }
-                }
-            }
+            // Максимальное время выполнения задачи
+            while (!InputFromConsole(out maxExecutionTimeInMilliseconds,
+                "Максимальное время выполнения одной задачи в миллисекундах (1000): ",
+                1000,
+                "Максимальное время не может быть меньше минимального",
+                value => value >= minExecutionTimeInMilliseconds)) ;
 
             return new TasksDescriptor(amountOfTasks, interruptionChance, minExecutionTimeInMilliseconds, maxExecutionTimeInMilliseconds);
         }
@@ -137,14 +109,13 @@ namespace Task_generator_system
             return Regex.IsMatch(ip, pattern);
         }
 
-        public static void sendToScheduler(TasksDescriptor taskDescriptor)
+        static void IpAndPortSet(out string ip, out int port)
         {
             string? inputString;
 
-            string ip = "";
-            int port = 0;
+            ip = "";
+            port = 0;
 
-            #region IP_SET
             Console.Write("IP адрес (127.0.0.1): ");
             inputString = Console.ReadLine();
             if (inputString == null || inputString == "")
@@ -164,9 +135,7 @@ namespace Task_generator_system
                     }
                 }
             }
-            #endregion
 
-            #region PORT_SET
             Console.Write("Порт (8080): ");
             inputString = Console.ReadLine();
             if (inputString == null || inputString == "")
@@ -187,12 +156,13 @@ namespace Task_generator_system
                         port = Convert.ToInt32(inputString);
                 }
             }
-            #endregion
+        }
 
+        public static void SendToScheduler(TasksDescriptor taskDescriptor, in string ip, in int port)
+        {
             var tcpEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
             var tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-            // Отправка по сокету
             string json = JsonSerializer.Serialize(taskDescriptor);
             var data = Encoding.UTF8.GetBytes(json);
 
@@ -224,10 +194,75 @@ namespace Task_generator_system
             tcpSocket.Close();
         }
 
+        public static void MakeBenchmarkTest()
+        {
+            string ip = "";
+            int port = 0;
+
+            IpAndPortSet(out ip, out port);
+
+            uint minAmountOfTasks = 0;
+            uint maxAmountOfTasks = 0;
+            uint stepAmountOfTasks = 0;
+            uint interruptionChance = 0;
+            uint minExecutionTimeInMilliseconds = 0;
+            uint maxExecutionTimeInMilliseconds = 0;
+
+            // Минимальное количество задач
+            while (!InputFromConsole(out minAmountOfTasks,
+                "Стартовое значение количества задач (10): ",
+                10,
+                "Должно быть > 0",
+                value => value > 0)) ;
+
+            // Максимальное количество задач
+            while (!InputFromConsole(out maxAmountOfTasks,
+                "Конечное значение количества задач (100): ",
+                100,
+                "Должно быть > 0",
+                value => value >= minAmountOfTasks)) ;
+
+            // Шаг прибавления количества задач
+            while (!InputFromConsole(out stepAmountOfTasks,
+                "Шаг количества задач (10): ",
+                10,
+                "Должно быть > 0",
+                value => value > 0)) ;
+
+            // Вероятность прерывания
+            while (!InputFromConsole(out interruptionChance,
+                "Вероятность прерывания задачи 0-100 (0): ",
+                0,
+                "Значение вероятности прерывания не может быть > 100",
+                value => value >= 0 && value <= 100)) ;
+
+            // Минимальное время выполнения задачи
+            while (!InputFromConsole(out minExecutionTimeInMilliseconds,
+                "Минимальное время выполнения одной задачи в миллисекундах (2000): ",
+                2000,
+                "Должно быть > 0",
+                value => value > 0)) ;
+
+            // Максимальное время выполнения задачи
+            while (!InputFromConsole(out maxExecutionTimeInMilliseconds,
+                "Максимальное время выполнения одной задачи в миллисекундах (3000): ",
+                3000,
+                "Максимальное время не может быть меньше минимального",
+                value => value > minExecutionTimeInMilliseconds)) ;
+
+            for(uint i = minAmountOfTasks; i < maxAmountOfTasks ; i += stepAmountOfTasks)
+            {
+                TasksDescriptor tasksDescriptor = new TasksDescriptor(i, interruptionChance, minExecutionTimeInMilliseconds, maxExecutionTimeInMilliseconds);
+                SendToScheduler(tasksDescriptor, ip, port);
+            }
+        }
+
         static void Main(string[] args)
         {
             string? command;
             TasksDescriptor? taskDescriptor = null;
+            string ip = "";
+            int port = 0;
 
             while (true)
             {
@@ -241,14 +276,17 @@ namespace Task_generator_system
                         goto exit;
                     case "help":
                         Console.WriteLine("mkgen : сделать описатель задач с заданными параметрами");
-                        Console.WriteLine("send : отправить описатель задач на шедуллер по TCP");
-                        Console.WriteLine("chgen : вывести информацию по сделанному описателю");
+                        Console.WriteLine("setsocket : задать ip и порт сервера");
+                        Console.WriteLine("send : отправить описатель задач на шедуллер по TCP (предварительно ip и порт должны быть заданы)");
+                        Console.WriteLine("checkgen : вывести информацию по сделанному описателю");
+                        Console.WriteLine("benchmark : провести бенчмарк системы");
                         Console.WriteLine("delgen : удалить описатель");
+                        Console.WriteLine("exit : выйти из программы (ctrl + Z)");
                         break;
                     case "mkgen":
-                        taskDescriptor = makeTaskDescriptor();
+                        taskDescriptor = MakeTaskDescriptor();
                         break;
-                    case "chgen":
+                    case "checkgen":
                         if (taskDescriptor is null)
                         {
                             Console.WriteLine("У вас нет созданного генератора");
@@ -258,28 +296,20 @@ namespace Task_generator_system
                             Console.WriteLine(taskDescriptor.ToString());
                         }
                         break;
+                    case "setsocket":
+                        IpAndPortSet(out ip, out port);
+                        break;
                     case "send":
-                        if (taskDescriptor is null)
+                        if (taskDescriptor is null || ip == "" || port == 0)
                         {
-                            Console.WriteLine("У вас нет созданного генератора");
+                            Console.WriteLine("У вас нет созданного генератора, либо некорректно введён порт и ip");
                             break;
                         }
 
-                        sendToScheduler(taskDescriptor);
-
-                        //tasks = taskGenerator.getTasks();
-
-                        //foreach (PriorityTask task in tasks)
-                        //{
-                        //    try
-                        //    {
-                        //        await task.execute();
-                        //    }
-                        //    catch (OperationCanceledException ex)
-                        //    {
-                        //        Console.WriteLine($"Задача с приоритетом {task.Priority} была отменена. Токен: {ex.CancellationToken}");
-                        //    }
-                        //}
+                        SendToScheduler(taskDescriptor, ip, port);
+                        break;
+                    case "benchmark":
+                        MakeBenchmarkTest();
                         break;
                     case "delgen":
                         taskDescriptor = null;
@@ -292,22 +322,6 @@ namespace Task_generator_system
             }
         exit:
             Console.ReadLine();
-
-            //TaskGenerator tg = new TaskGenerator(5, 50, 1000);
-
-            //List<PriorityTask> tasks = tg.getTasks();
-
-            //foreach (PriorityTask task in tasks)
-            //{
-            //    try
-            //    {
-            //        await task.execute();
-            //    }
-            //    catch (OperationCanceledException ex)
-            //    {
-            //        Console.WriteLine($"Задача с приоритетом {task.Priority} была отменена. Токен: {ex.CancellationToken}");
-            //    }
-            //}
         }
     }
 }
