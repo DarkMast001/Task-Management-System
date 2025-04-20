@@ -31,7 +31,14 @@ namespace Shaduler_and_processor_system
         private int _waitingThreads = 0;
 
         // Сокет текущего подключенного пользователя
-        private static Socket? _userSocket;
+        private Socket? _userSocket;
+
+        private int _countOfTasks;
+
+        //private List<Socket> _usersSockets;
+
+        private ConcurrentDictionary<Socket, int> _maxTasksPerSocket;
+        private ConcurrentDictionary<Socket, int> _countTasksPerSocket;
 
         private Dictionary<Socket, TasksMetric> _taskMetrics;
 
@@ -42,6 +49,28 @@ namespace Shaduler_and_processor_system
             _isProcessorWork = false;
             _stopWatch = new Stopwatch();
             _taskMetrics = new Dictionary<Socket, TasksMetric>();
+            _countOfTasks = 0;
+
+            //_usersSockets = new List<Socket>();
+            _maxTasksPerSocket = new ConcurrentDictionary<Socket, int>();
+            _countTasksPerSocket = new ConcurrentDictionary<Socket, int>();
+        }
+
+        public Socket? UserSocket
+        {
+            get => _userSocket;
+            set => _userSocket = value;
+        }
+
+        public void AddSocketToList(Socket socket, int amountOfTasks)
+        {
+            //_usersSockets.Add(socket);
+
+            // lock (_lock)
+            // {
+                //_maxTasksPerSocket.TryAdd(socket, amountOfTasks);
+                //_countTasksPerSocket.TryAdd(socket, amountOfTasks);
+            // }
         }
 
         public void Enqueue(PriorityTask task)
@@ -58,6 +87,7 @@ namespace Shaduler_and_processor_system
                     _queues[task.Priority] = new ConcurrentQueue<PriorityTask>();
                 }
                 _queues[task.Priority].Enqueue(task);
+                _countOfTasks++;
             }
 
             _taskAvailable.Set();
@@ -141,16 +171,18 @@ namespace Shaduler_and_processor_system
                 {
                     Interlocked.Increment(ref _waitingThreads);
 
-                    if (_queues.Count == 0 &&  _waitingThreads == _countWorkers)
+                    if (_queues.Count == 0 && _waitingThreads == _countWorkers)
                     {
                         _stopWatch.Stop();
                         if ((int)_stopWatch.ElapsedMilliseconds > 0)
                         {
-                            string str = $"Все задачи были выполнены за {(int)_stopWatch.ElapsedMilliseconds}";
+                            string str = $"{_countOfTasks} задач было выполнено за {(int)_stopWatch.ElapsedMilliseconds}";
                             Console.WriteLine(str);
                             _userSocket?.Send(Encoding.UTF8.GetBytes(str));
                             _userSocket?.Shutdown(SocketShutdown.Both);
                             _userSocket?.Close();
+                            _userSocket = null;
+                            _countOfTasks = 0;
                         }
                     }
 
@@ -165,17 +197,40 @@ namespace Shaduler_and_processor_system
                 try
                 {
                     await Task.Run(() => task.Execute());
+
+                    
                 }
                 catch (OperationCanceledException ex)
                 {
                     Console.WriteLine($"Задача {task.Id} с приоритетом {task.Priority} была отменена. Токен: {ex.CancellationToken}");
                 }
-            }
-        }
+                finally
+                {
+                    //lock (_lock)
+                    //{
+                    //    if (task.Socket != null && _countTasksPerSocket.ContainsKey(task.Socket))
+                    //    {
+                    //        //int currentCont = _countTasksPerSocket[task.Socket];
+                    //        //_countTasksPerSocket[task.Socket] = currentCont - 1;
+                    //        _countTasksPerSocket.TryGetValue(task.Socket, out int currentCount);
+                    //        _countTasksPerSocket.TryUpdate(task.Socket, currentCount - 1, currentCount);
 
-        public static void AddUserSocket(Socket socket)
-        {
-            _userSocket = socket;
+
+
+                    //        if (currentCount - 1 == 0)
+                    //        {
+                    //            _stopWatch.Stop();
+                    //            string str = $"{_maxTasksPerSocket[task.Socket]} задач было выполнено за {(int)_stopWatch.ElapsedMilliseconds}";
+                    //            task.Socket.Send(Encoding.UTF8.GetBytes(str));
+                    //            task.Socket.Shutdown(SocketShutdown.Both);
+                    //            task.Socket.Close();
+                    //            _countTasksPerSocket.TryRemove(task.Socket, out _);
+                    //            _maxTasksPerSocket.TryRemove(task.Socket, out _);
+                    //        }
+                    //    }
+                    //}
+                }
+            }
         }
     }
 }

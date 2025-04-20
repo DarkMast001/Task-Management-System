@@ -183,8 +183,16 @@ namespace Task_generator_system
 
             do
             {
-                size = tcpSocket.Receive(buffer);
-                answer.Append(Encoding.UTF8.GetString(buffer, 0, size));
+                try
+                {
+                    size = tcpSocket.Receive(buffer);
+                    answer.Append(Encoding.UTF8.GetString(buffer, 0, size));
+                }
+                catch (SocketException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
             }
             while (tcpSocket.Available > 0);
 

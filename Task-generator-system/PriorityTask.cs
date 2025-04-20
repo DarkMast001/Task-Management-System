@@ -1,10 +1,14 @@
-﻿namespace Task_generator_system
+﻿using System.Net.Sockets;
+
+namespace Task_generator_system
 {
     public class PriorityTask
     {
         private readonly int _priority;
         private readonly Task _task;
         private readonly int _executionTime;
+
+        private Socket? _socket;
 
         public PriorityTask(Action action, int priority, int executionTime)
         {
@@ -16,6 +20,12 @@
         public int Priority => _priority;
 
         public int Id => _task.Id;
+
+        public Socket? Socket
+        {
+            get => _socket;
+            set => _socket = value;
+        }
 
         public async Task Execute()
         {
