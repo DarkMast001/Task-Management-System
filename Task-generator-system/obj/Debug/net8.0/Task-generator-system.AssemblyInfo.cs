@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Task-generator-system")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ef6ab050f2d7320a5b811b32f62d1763260262c0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eaf9cbbcea6f5565c3260aabb1f0cd89b53c689d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Task-generator-system")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Task-generator-system")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
