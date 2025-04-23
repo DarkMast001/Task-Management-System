@@ -8,8 +8,6 @@ namespace Task_generator_system
         private readonly Task _task;
         private readonly int _executionTime;
 
-        private Socket? _socket;
-
         public PriorityTask(Action action, int priority, int executionTime)
         {
             _task = new Task(action);
@@ -20,12 +18,6 @@ namespace Task_generator_system
         public int Priority => _priority;
 
         public int Id => _task.Id;
-
-        public Socket? Socket
-        {
-            get => _socket;
-            set => _socket = value;
-        }
 
         public async Task Execute()
         {

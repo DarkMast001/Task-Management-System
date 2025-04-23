@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TasksDescriptorModule")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eaf9cbbcea6f5565c3260aabb1f0cd89b53c689d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+244a047bd8329a9a4da8acc51e89f3fa98df4db2")]
 [assembly: System.Reflection.AssemblyProductAttribute("TasksDescriptorModule")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TasksDescriptorModule")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
