@@ -14,7 +14,7 @@ namespace Shaduler_and_processor_system
         static int countOfConnectedUsers = 0;
         static Shaduler? shaduler;
 
-        private static void DisconnectUser(Socket listener, int countOfCompletedTasks, int executionTime)
+        static void DisconnectUser(Socket listener, int countOfCompletedTasks, int executionTime)
         {
             string str = $"{countOfCompletedTasks} задач было выполнено за {executionTime}\n";
             Console.WriteLine(str);
@@ -26,7 +26,7 @@ namespace Shaduler_and_processor_system
                 shaduler.UserSocket = null;
         }
 
-        static void userProcessing(object? listenerObj)
+        static void UserProcessing(object? listenerObj)
         {
             if (listenerObj == null || shaduler == null)
                 return;
@@ -145,7 +145,7 @@ namespace Shaduler_and_processor_system
                 Socket listener = tcpSocket.Accept();
                 countOfConnectedUsers += 1;
 
-                Thread userProcessingThread = new Thread(userProcessing);
+                Thread userProcessingThread = new Thread(UserProcessing);
                 userProcessingThread.Name = $"User {countOfConnectedUsers} thread";
                 userProcessingThread.Start(listener);
             }
