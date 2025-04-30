@@ -9,19 +9,19 @@ namespace Shaduler_and_processor_system
     public class Shaduler
     {
         // Очередь задач по приоритетам
-        private readonly SortedList<int, ConcurrentQueue<PriorityTask>> _queues;
+        private readonly SortedList<int, ConcurrentQueue<PriorityTask>> _queues = new SortedList<int, ConcurrentQueue<PriorityTask>>();
 
         // Объект для потокобезопасного добавления и извлечения задач из очереди
         private readonly object _lock = new();
 
-        // Флаг обозначающий вызвана ли функция StartProcessorWork() или нет
-        private bool _isProcessorWork;
+        // Флаг, обозначающий вызвана ли функция StartProcessorWork() или нет
+        private bool _isProcessorWork = false;
 
         // Количество процессов
         private uint _countWorkers;
         
         // Таймер, замерящий время выполнения задач
-        private Stopwatch _stopWatch;
+        private Stopwatch _stopWatch = new Stopwatch();
 
         // Механизм синхронизации. Позволяет блокировать потоки до тех пор
         // пока не будет вызван метод Set. После вызова Set все заблокированные потоки возобновят выполнение.
@@ -34,32 +34,31 @@ namespace Shaduler_and_processor_system
         private Socket? _userSocket;
 
         // Количество задач, необходимых к выполнению
-        private int _countOfTasks;
+        private int _countOfTasks = 0;
+
+        // Событие, которое выполнится в момент, когда все задачи будут обработаны
+        private event Action<Socket, int, int>? _notifyingUserOfCompletionTasks;
 
         public Shaduler(uint countWorkers) 
         {
-            _queues = new SortedList<int, ConcurrentQueue<PriorityTask>>();
             _countWorkers = countWorkers;
-            _isProcessorWork = false;
-            _stopWatch = new Stopwatch();
-            _countOfTasks = 0;
         }
 
         public Socket? UserSocket
         {
             get => _userSocket;
-            set => _userSocket = value;
+            set
+            {
+                _userSocket = value;
+                if (value == null)
+                    _notifyingUserOfCompletionTasks = null;
+            }
         }
 
-        public void AddSocketToList(Socket socket, int amountOfTasks)
+        public event Action<Socket, int, int>? NotifyingUserOfCompletionTasks
         {
-            //_usersSockets.Add(socket);
-
-            // lock (_lock)
-            // {
-                //_maxTasksPerSocket.TryAdd(socket, amountOfTasks);
-                //_countTasksPerSocket.TryAdd(socket, amountOfTasks);
-            // }
+            add => _notifyingUserOfCompletionTasks += value;
+            remove => _notifyingUserOfCompletionTasks -= value;
         }
 
         public void Enqueue(PriorityTask task)
@@ -165,12 +164,20 @@ namespace Shaduler_and_processor_system
                         _stopWatch.Stop();
                         if ((int)_stopWatch.ElapsedMilliseconds > 0)
                         {
-                            string str = $"{_countOfTasks} задач было выполнено за {(int)_stopWatch.ElapsedMilliseconds}";
-                            Console.WriteLine(str);
-                            _userSocket?.Send(Encoding.UTF8.GetBytes(str));
-                            _userSocket?.Shutdown(SocketShutdown.Both);
-                            _userSocket?.Close();
-                            _userSocket = null;
+                            if (_userSocket == null)
+                            {
+                                Console.WriteLine("Сокет пользователя null");
+                                _countOfTasks = 0;
+                                return;
+                            }
+                            if (_notifyingUserOfCompletionTasks == null)
+                            {
+                                _userSocket.Send(Encoding.UTF8.GetBytes("200"));
+                                _userSocket.Shutdown(SocketShutdown.Both);
+                                _userSocket.Close();
+                                return;
+                            }
+                            _notifyingUserOfCompletionTasks.Invoke(_userSocket, _countOfTasks, (int)_stopWatch.ElapsedMilliseconds);
                             _countOfTasks = 0;
                         }
                     }
@@ -186,8 +193,6 @@ namespace Shaduler_and_processor_system
                 try
                 {
                     await Task.Run(() => task.Execute());
-
-                    
                 }
                 catch (OperationCanceledException ex)
                 {

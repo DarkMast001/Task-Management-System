@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -8,66 +9,87 @@ namespace Shaduler_and_processor_system
 {
     internal class Program
     {
-        static Queue<Socket> userQueue = new Queue<Socket>();
+        static ConcurrentQueue<Socket> userQueue = new ConcurrentQueue<Socket>();
         static object queueLock = new object();
+        static int countOfConnectedUsers = 0;
+        static Shaduler? shaduler;
 
-        static void ProcessQueue(object? shad)
+        private static void DisconnectUser(Socket listener, int countOfCompletedTasks, int executionTime)
         {
-            if (shad == null)
+            string str = $"{countOfCompletedTasks} задач было выполнено за {executionTime}\n";
+            Console.WriteLine(str);
+            listener.Send(Encoding.UTF8.GetBytes(str));
+            listener.Send(Encoding.UTF8.GetBytes("200"));
+            listener.Shutdown(SocketShutdown.Both);
+            listener.Close();
+            if (shaduler != null)
+                shaduler.UserSocket = null;
+        }
+
+        static void userProcessing(object? listenerObj)
+        {
+            if (listenerObj == null || shaduler == null)
                 return;
 
-            Shaduler shaduler = (Shaduler)shad;
+            Socket listener = (Socket)listenerObj;
+
+            int position;
+            lock (queueLock)
+            {
+                userQueue.Enqueue(listener);
+                position = userQueue.Count;
+            }
+            listener.Send(Encoding.UTF8.GetBytes($"Пользователь добавлен в очередь. Позиция: {position}\n"));
 
             while (true)
             {
-                Socket? nextUser = null;
-
-                lock (queueLock)
+                if (shaduler.UserSocket == null)
                 {
-                    if (userQueue.Count > 0 && shaduler.UserSocket == null)
+                    Socket? nextUser = null;
+                    if (userQueue.TryDequeue(out nextUser))
                     {
-                        nextUser = userQueue.Dequeue();
-                        Console.WriteLine("Пользователь извлечен из очереди для обработки");
-                    }
-                }
+                        nextUser.Send(Encoding.UTF8.GetBytes("Пользователь извлечен из очереди для обработки\n"));
 
-                if (nextUser != null)
-                {
-                    try
-                    {
-                        shaduler.UserSocket = nextUser;
-                        byte[] buffer = new byte[256];
-                        int size = 0;
-                        StringBuilder data = new StringBuilder();
-
-                        do
+                        if (nextUser != null)
                         {
-                            size = nextUser.Receive(buffer);
-                            data.Append(Encoding.UTF8.GetString(buffer, 0, size));
-                        }
-                        while (nextUser.Available > 0);
-
-                        TaskGenerator? taskGenerator = TaskGenerator.TryCreate(data.ToString());
-                        if (taskGenerator == null)
-                        {
-                            nextUser.Send(Encoding.UTF8.GetBytes("BAD DATA"));
-                        }
-                        else
-                        {
-                            List<PriorityTask> priorityTasks = taskGenerator.GetTasks();
-                            foreach (PriorityTask priorityTask in priorityTasks)
+                            try
                             {
-                                shaduler.Enqueue(priorityTask);
-                            }
-                            priorityTasks.Clear();
-                        }
+                                shaduler.UserSocket = nextUser;
+                                shaduler.NotifyingUserOfCompletionTasks += DisconnectUser;
+                                byte[] buffer = new byte[256];
+                                int size = 0;
+                                StringBuilder data = new StringBuilder();
 
-                        Console.WriteLine(data);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Ошибка при обработке пользователя: {ex.Message}");
-                        shaduler.UserSocket = null;
+                                do
+                                {
+                                    size = nextUser.Receive(buffer);
+                                    data.Append(Encoding.UTF8.GetString(buffer, 0, size));
+                                }
+                                while (nextUser.Available > 0);
+
+                                TaskGenerator? taskGenerator = TaskGenerator.TryCreate(data.ToString());
+                                if (taskGenerator == null)
+                                {
+                                    nextUser.Send(Encoding.UTF8.GetBytes("BAD DATA"));
+                                }
+                                else
+                                {
+                                    List<PriorityTask> priorityTasks = taskGenerator.GetTasks();
+                                    foreach (PriorityTask priorityTask in priorityTasks)
+                                    {
+                                        shaduler.Enqueue(priorityTask);
+                                    }
+                                    priorityTasks.Clear();
+                                }
+
+                                Console.WriteLine(data);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка при обработке пользователя: {ex.Message}");
+                                shaduler.UserSocket = null;
+                            }
+                        }
                     }
                 }
                 else
@@ -103,7 +125,7 @@ namespace Shaduler_and_processor_system
                 }
             }
 
-            Shaduler shaduler = new Shaduler(workerCount);
+            shaduler = new Shaduler(workerCount);
             #endregion
 
             shaduler.StartProcessorWork(); 
@@ -116,20 +138,16 @@ namespace Shaduler_and_processor_system
             tcpSocket.Bind(tcpEndPoint);
             tcpSocket.Listen(5);
 
-            Thread queueProcessingThread = new Thread(ProcessQueue);
-            queueProcessingThread.Start(shaduler);
-
             while (true)
             {
                 Console.WriteLine("Жду задачи...");
 
                 Socket listener = tcpSocket.Accept();
+                countOfConnectedUsers += 1;
 
-                lock (queueLock)
-                {
-                    userQueue.Enqueue(listener);
-                    Console.WriteLine("Новый пользователь добавлен в очередь");
-                }
+                Thread userProcessingThread = new Thread(userProcessing);
+                userProcessingThread.Name = $"User {countOfConnectedUsers} thread";
+                userProcessingThread.Start(listener);
             }
             #endregion
         }

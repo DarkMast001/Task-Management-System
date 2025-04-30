@@ -158,48 +158,62 @@ namespace Task_generator_system
             }
         }
 
-        public static void SendToScheduler(TasksDescriptor taskDescriptor, in string ip, in int port)
+        static void ReceiveLoop(Socket socket)
         {
-            var tcpEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
-            var tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            byte[] buffer = new byte[256];
+            int size = 0;
+            StringBuilder answer = new StringBuilder();
 
-            string json = JsonSerializer.Serialize(taskDescriptor);
-            var data = Encoding.UTF8.GetBytes(json);
+            try
+            {
+                do
+                {
+                    size = socket.Receive(buffer);
+                    if (size > 0)
+                    {
+                        string answerString = Encoding.UTF8.GetString(buffer, 0, size);
+                        if (answerString != "200")
+                            answer.Append(answerString);
+                        else
+                            break;
+
+                        Console.Write(answerString);
+                    }
+
+                } while (size > 0 && !answer.ToString().Contains("200"));
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"Ошибка при приёме данных: {ex.Message}");
+            }
+            finally
+            {
+                socket.Shutdown(SocketShutdown.Both);
+                socket.Close();
+            }
+        }
+
+        public static async void SendToSchedulerAsync(TasksDescriptor taskDescriptor, string ip, int port)
+        {
+            IPEndPoint tcpEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            Socket tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
             try
             {
                 tcpSocket.Connect(tcpEndPoint);
+
+                string json = JsonSerializer.Serialize(taskDescriptor);
+                byte[] data = Encoding.UTF8.GetBytes(json);
+
                 tcpSocket.Send(data);
+
+                await Task.Run(() => ReceiveLoop(tcpSocket));
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message}");
+                Console.WriteLine($"Ошибка подключения {ex.Message}");
                 return;
             }
-
-            var buffer = new byte[256];
-            var size = 0; 
-            var answer = new StringBuilder();
-
-            do
-            {
-                try
-                {
-                    size = tcpSocket.Receive(buffer);
-                    answer.Append(Encoding.UTF8.GetString(buffer, 0, size));
-                }
-                catch (SocketException ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    return;
-                }
-            }
-            while (tcpSocket.Available > 0);
-
-            Console.WriteLine(answer);
-
-            tcpSocket.Shutdown(SocketShutdown.Both);
-            tcpSocket.Close();
         }
 
         public static void MakeBenchmarkTest()
@@ -261,7 +275,7 @@ namespace Task_generator_system
             for(uint i = minAmountOfTasks; i < maxAmountOfTasks ; i += stepAmountOfTasks)
             {
                 TasksDescriptor tasksDescriptor = new TasksDescriptor(i, interruptionChance, minExecutionTimeInMilliseconds, maxExecutionTimeInMilliseconds);
-                SendToScheduler(tasksDescriptor, ip, port);
+                SendToSchedulerAsync(tasksDescriptor, ip, port);
             }
         }
 
@@ -314,7 +328,7 @@ namespace Task_generator_system
                             break;
                         }
 
-                        SendToScheduler(taskDescriptor, ip, port);
+                        SendToSchedulerAsync(taskDescriptor, ip, port);
                         break;
                     case "benchmark":
                         MakeBenchmarkTest();
