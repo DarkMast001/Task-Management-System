@@ -17,7 +17,7 @@
       "TasksDescriptorModule/1.0.0": {
         "runtime": {
           "TasksDescriptorModule.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }

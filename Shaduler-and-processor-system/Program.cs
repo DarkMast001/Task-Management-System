@@ -10,7 +10,8 @@ namespace Shaduler_and_processor_system
     internal class Program
     {
         static ConcurrentQueue<Socket> userQueue = new ConcurrentQueue<Socket>();
-        static object queueLock = new object();
+        static readonly object queueLock = new object();
+        static readonly object shadulerLock = new object();
         static int countOfConnectedUsers = 0;
         static Shaduler? shaduler;
 
@@ -23,7 +24,10 @@ namespace Shaduler_and_processor_system
             listener.Shutdown(SocketShutdown.Both);
             listener.Close();
             if (shaduler != null)
+            {
+                shaduler.NotifyingUserOfCompletionTasks -= DisconnectUser;
                 shaduler.UserSocket = null;
+            }
         }
 
         static void UserProcessing(object? listenerObj)
@@ -43,53 +47,54 @@ namespace Shaduler_and_processor_system
 
             while (true)
             {
-                if (shaduler.UserSocket == null)
+                Socket? nextUser = null;
+
+                lock (shadulerLock)
                 {
-                    Socket? nextUser = null;
-                    if (userQueue.TryDequeue(out nextUser))
+                    if (shaduler.UserSocket == null && userQueue.TryDequeue(out nextUser))
                     {
                         nextUser.Send(Encoding.UTF8.GetBytes("Пользователь извлечен из очереди для обработки\n"));
+                        shaduler.UserSocket = nextUser;
+                    }
+                }
 
-                        if (nextUser != null)
+                if (nextUser != null)
+                {
+                    try
+                    {
+                        shaduler.NotifyingUserOfCompletionTasks += DisconnectUser;
+                        byte[] buffer = new byte[256];
+                        int size = 0;
+                        StringBuilder data = new StringBuilder();
+
+                        do
                         {
-                            try
-                            {
-                                shaduler.UserSocket = nextUser;
-                                shaduler.NotifyingUserOfCompletionTasks += DisconnectUser;
-                                byte[] buffer = new byte[256];
-                                int size = 0;
-                                StringBuilder data = new StringBuilder();
-
-                                do
-                                {
-                                    size = nextUser.Receive(buffer);
-                                    data.Append(Encoding.UTF8.GetString(buffer, 0, size));
-                                }
-                                while (nextUser.Available > 0);
-
-                                TaskGenerator? taskGenerator = TaskGenerator.TryCreate(data.ToString());
-                                if (taskGenerator == null)
-                                {
-                                    nextUser.Send(Encoding.UTF8.GetBytes("BAD DATA"));
-                                }
-                                else
-                                {
-                                    List<PriorityTask> priorityTasks = taskGenerator.GetTasks();
-                                    foreach (PriorityTask priorityTask in priorityTasks)
-                                    {
-                                        shaduler.Enqueue(priorityTask);
-                                    }
-                                    priorityTasks.Clear();
-                                }
-
-                                Console.WriteLine(data);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Ошибка при обработке пользователя: {ex.Message}");
-                                shaduler.UserSocket = null;
-                            }
+                            size = nextUser.Receive(buffer);
+                            data.Append(Encoding.UTF8.GetString(buffer, 0, size));
                         }
+                        while (nextUser.Available > 0);
+
+                        TaskGenerator? taskGenerator = TaskGenerator.TryCreate(data.ToString());
+                        if (taskGenerator == null)
+                        {
+                            nextUser.Send(Encoding.UTF8.GetBytes("BAD DATA"));
+                        }
+                        else
+                        {
+                            List<PriorityTask> priorityTasks = taskGenerator.GetTasks();
+                            foreach (PriorityTask priorityTask in priorityTasks)
+                            {
+                                shaduler.Enqueue(priorityTask);
+                            }
+                            priorityTasks.Clear();
+                        }
+
+                        Console.WriteLine(data);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при обработке пользователя: {ex.Message}");
+                        shaduler.UserSocket = null;
                     }
                 }
                 else

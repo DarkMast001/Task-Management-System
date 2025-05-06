@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Shaduler-and-processor-system")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+47f21c428e8fbe9af530dff42fcf55f1cddbea48")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f108ed6c57172bc18f216402f9900f274392e448")]
 [assembly: System.Reflection.AssemblyProductAttribute("Shaduler-and-processor-system")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Shaduler-and-processor-system")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

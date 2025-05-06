@@ -178,6 +178,7 @@ namespace Task_generator_system
                             break;
 
                         Console.Write(answerString);
+                        Console.Write(">>> ");
                     }
 
                 } while (size > 0 && !answer.ToString().Contains("200"));
@@ -272,7 +273,7 @@ namespace Task_generator_system
                 "Максимальное время не может быть меньше минимального",
                 value => value > minExecutionTimeInMilliseconds)) ;
 
-            for(uint i = minAmountOfTasks; i < maxAmountOfTasks ; i += stepAmountOfTasks)
+            for(uint i = minAmountOfTasks; i <= maxAmountOfTasks ; i += stepAmountOfTasks)
             {
                 TasksDescriptor tasksDescriptor = new TasksDescriptor(i, interruptionChance, minExecutionTimeInMilliseconds, maxExecutionTimeInMilliseconds);
                 SendToSchedulerAsync(tasksDescriptor, ip, port);
